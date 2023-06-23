@@ -1,0 +1,34 @@
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blogs.db'
+db = SQLAlchemy(app)
+
+class Blog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    author = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+@app.route('/')
+def index():
+    blogs = Blog.query.all()
+    return render_template('index.html', blogs=blogs)
+
+@app.route('/create_blog', methods=['GET', 'POST'])
+def create_blog():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        author = request.form['author']
+        blog = Blog(title=title, description=description, author=author)
+        db.session.add(blog)
+        db.session.commit()
+        return redirect(url_for('index'))
+    return render_template('create_blog.html')
+
+if __name__ == '__main__':
+    db.create_all()
+    app.run(debug=True)
